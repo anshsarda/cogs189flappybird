@@ -8,7 +8,7 @@ from queue import Queue
 
 # SETTINGS
 
-cyton_in = True
+cyton_in = False
 width = 1536
 height = 864
 sampling_rate = 250
