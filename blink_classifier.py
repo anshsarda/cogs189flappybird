@@ -119,7 +119,7 @@ def train_model(X, y):
         return np.column_stack([
             x.max(axis=1),
             x.min(axis=1),
-            x.ptp(axis=1),
+            np.ptp(x, axis=1),
             x.std(axis=1),
         ])
 
@@ -151,7 +151,7 @@ def predict(model, ep):
     feat = np.array([
         x.max(),
         x.min(),
-        x.ptp(),
+        np.ptp(),
         x.std()
     ]).reshape(1, -1)
 
