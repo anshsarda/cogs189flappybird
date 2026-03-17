@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 FS = 250
-EEG_CH = [0, 1]   # FP1, FP2
+EEG_CH = [0, 1]
 MODEL_FILE = "blink_model.joblib"
 
 TRAIN_RUNS = ["1", "2"]
@@ -31,13 +31,24 @@ def make_epochs(eeg, events, timestamps):
     blink = []
     noblink = []
 
+    total_events = 0
+
     for ev in events:
-        if ev["event"] != "blink_now":
+        try:
+            name = str(ev["event"]).lower()
+            t_sec = float(ev["time"])
+        except:
+            try:
+                name = str(ev[1]).lower()
+                t_sec = float(ev[2])
+            except:
+                continue
+
+        if "blink" not in name:
             continue
 
-        t_sec = ev["time"]
+        total_events += 1
 
-        # map time → sample index
         idx = np.argmin(np.abs(timestamps - t_sec))
 
         a = idx - win // 2
@@ -57,12 +68,14 @@ def make_epochs(eeg, events, timestamps):
         if e1.shape[1] != win or e2.shape[1] != win:
             continue
 
-        # remove DC offset
         e1 = e1 - e1.mean(axis=1, keepdims=True)
         e2 = e2 - e2.mean(axis=1, keepdims=True)
 
         blink.append(e1)
         noblink.append(e2)
+
+    print("events found:", total_events)
+    print("epochs created:", len(blink))
 
     X = blink + noblink
     y = np.array([1]*len(blink) + [0]*len(noblink))
@@ -93,6 +106,9 @@ def balance(X, y):
     idx1 = np.where(y == 1)[0]
     idx0 = np.where(y == 0)[0]
 
+    if len(idx1) == 0 or len(idx0) == 0:
+        return X, y
+
     n = min(len(idx1), len(idx0))
     idx = np.concatenate([idx1[:n], idx0[:n]])
 
@@ -112,7 +128,7 @@ def extract_features(X):
                 np.min(ch),
                 np.ptp(ch),
                 np.std(ch),
-                np.sum(np.abs(ch))   # energy (very important)
+                np.sum(np.abs(ch))
             ])
 
         feats.append(ch_feats)
@@ -122,6 +138,9 @@ def extract_features(X):
 
 def train_model(X, y):
     Xf = extract_features(X)
+
+    if len(Xf) == 0:
+        raise ValueError("No training data — check event parsing.")
 
     scaler = StandardScaler()
     Xf = scaler.fit_transform(Xf)
@@ -153,6 +172,10 @@ def predict(model, ep):
 
 
 def evaluate(model, X, y):
+    if len(X) == 0:
+        print("no test data")
+        return
+
     preds = []
 
     for ep in X:
