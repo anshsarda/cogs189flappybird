@@ -22,7 +22,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Train TRCA model')
 
-folder_path = 'data/cyton8_alternating-vep_32-class_1.2s/sub-01/ses-01/'
+folder_path = 'data/blink_task/sub-37/ses-01'
 model_save_dir = 'cache/'
 model_name = 'FBTRCA_model.pkl'
 # folder_path = '../data/cyton8_alternating-vep_32-class_1.5s/sub-01/ses-01/'
